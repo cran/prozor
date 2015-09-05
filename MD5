@@ -1,7 +1,7 @@
-3f6a302be83a1bed0c31f73186d3f7a1 *DESCRIPTION
+96994ce0c199ccb94b69e0b4fb1540c1 *DESCRIPTION
 391329acd6e7eb7deff2687835e07e41 *NAMESPACE
-e46903cee6d8d87c3c5a76dcf09e897e *R/annotatePeptides.R
-9b9187b57361be11f7f65a37d8eb63d9 *R/greedy.R
+ff0becaf1b8d370d0642dbec2b48d183 *R/annotatePeptides.R
+e772fc2c5c1f52c57be045d7d86791e1 *R/greedy.R
 002c2b2f4fca7c50ed8f6ae98bf17579 *R/hello.R
 4810072f104b61e732e9fdca0d4181fc *R/prepareMatrix.R
 04257c7a6446f3a16477b33ec2da1b14 *README.md
