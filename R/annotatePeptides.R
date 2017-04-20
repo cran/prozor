@@ -1,98 +1,116 @@
-#R
-.annotateProteinIDGrep <- function(x , fasta, digestPattern="(([RK])|(^)|(^M))"){
-    sequence = x
-    idx <- grep (sequence,  fasta, fixed = TRUE)
-    if(length(idx) > 1){
-        pattern = paste(digestPattern, sequence, sep='')
-        selected <- fasta[idx]
-        idx2 <- grep(pattern, selected, fixed=FALSE)
-        idx<-idx[idx2]
-    }
-    return(idx)
-}
-
-.getMatchingProteinIDX <- function(data,
-                                   fasta,
-                                   digestPattern = "(([RK])|(^)|(^M))",
-                                   mcCores=NULL
-){
-    timeStart <- Sys.time();
-    if(is.null(mcCores)){
-        mcCores <- min(6,parallel::detectCores(logical=FALSE))
-    }
-    if( length(data) > 100 & mcCores > 1){
-        message(paste("going to use : " , mcCores ," cores."))
-        registerDoParallel(mcCores)
-        res <- foreach(i = data ) %dopar% .annotateProteinIDGrep(i, fasta, digestPattern)
-        stopImplicitCluster()
-    }else{
-        res <- lapply(data, .annotateProteinIDGrep, fasta, digestPattern)
-    }
-    names(res) = data
-    timeEnd <- Sys.time();
-    message(paste("time taken: ", difftime(timeEnd, timeStart, units='mins'),  "minutes"))
-    return(res)
-}
-
-
-#' annotate peptides with protein ids
+#' Annotate peptides with protein ids
+#'
+#' peptides which do not have protein assignment drop out
 #' @param pepinfo - list of peptides - sequence, optional modified sequence, charge state.
-#' @param fasta - object as created by read.fasta in pacakge seqinr
-#' @param digestPattern - default "(([RK])|(^)|(^M))"
-#' @param mcCores number of cores to use
+#' @param fasta - object as created by readPeptideFasta
+#' @param prefix - default "(([RK])|(^)|(^M))"
+#' @param suffix - default ""
+#' @import stringr
 #' @export
 #' @examples
 #' library(prozor)
-#' library(doParallel)
-#' library(foreach)
-#' library(seqinr)
-#' data(pepdata)
-#' head(pepdata)
+#' data(pepprot)
 #'
 #' file = file.path(path.package("prozor"),"extdata/shortfasta.fasta" )
-#' fasta = read.fasta(file = file, as.string = TRUE, seqtype="AA")
-#' # we use a subset of the data to speedup the computation
-#' #res = annotatePeptides(pepdata, fasta)
-#' res = annotatePeptides(pepdata[1:20,], fasta,mcCores=1)
-#' res = annotatePeptides(pepdata[1:20,"peptideSequence"],fasta)
-#' head(res)
 #'
+#' fasta = readPeptideFasta(file = file)
+#' res = annotatePeptides(pepprot[1:20,], fasta)
+#' head(res)
+#' res = annotatePeptides(pepprot[1:20,"peptideSeq"],fasta)
+#' length(res)
 annotatePeptides <- function(pepinfo,
-                                fasta,
-                                digestPattern = "(([RK])|(^)|(^M))",mcCores=NULL
+                             fasta,
+                             prefix = "(([RK])|(^)|(^M))",
+                             suffix = ""
+
 ){
+
     if(is.null(dim(pepinfo))){
         pepinfo = matrix(pepinfo,ncol=1)
-        colnames(pepinfo) = "peptideSequence"
+        colnames(pepinfo) = "peptideSeq"
     }
+    pepinfo = pepinfo[,"proteinID" != colnames(pepinfo),drop=FALSE]
+
     pepinfo = apply(pepinfo,2,as.character)
-    lengthPeptide = sapply(pepinfo[,"peptideSequence"],nchar)
+    lengthPeptide = sapply(pepinfo[,"peptideSeq"],nchar)
     pepinfo = cbind(pepinfo,"lengthPeptide"=lengthPeptide)
-
-    pepseq  = unique(as.character(pepinfo[,"peptideSequence"]))
-    res = .getMatchingProteinIDX(pepseq, fasta,digestPattern,mcCores)
-    lengthFasta  = sapply(fasta,nchar)
-    namesFasta = names(fasta)
-    protLength = vector(length(res),mode="list")
-    for(i in 1:length(res)){
-        protLength[[i]] =rbind("lengthProtein"=lengthFasta[res[[i]]],"proteinID"=namesFasta[res[[i]]],"peptideSequence"=names(res)[i])
-    }
-    #protLength <<- protLength
-    checkdim <- sapply(protLength, function(x){dim(x)[1]})
-    which2remove <- which(checkdim == 1)
-    if( length(which2remove) > 0 ){
-        protLength <- protLength[-which2remove]
-    }
-    restab = matrix(unlist(protLength),ncol=3,byrow=TRUE)
-    colnames(restab) = c("lengthProtein","proteinID","peptideSequence")
-    #restab <<- restab
-    #pepinfo <<- pepinfo
-    res = merge(restab,pepinfo,by.x="peptideSequence",by.y="peptideSequence")
-
-    res[,"peptideSequence"] <- as.character( res[,"peptideSequence"])
+    pepseq  = unique(as.character(pepinfo[,"peptideSeq"]))
+    restab <- annotateAHO(pepseq, fasta)
+    restab <- filterSequences(restab, prefix = prefix, suffix = suffix)
+    res = merge(restab,pepinfo,by.x="peptideSeq",by.y="peptideSeq")
+    res[,"peptideSeq"] <- as.character( res[,"peptideSeq"])
     res[,"proteinID"]<- as.character(res[,"proteinID"])
-    res[,"peptideModSequence"] <- as.character(res[,"peptideModSequence"])
+
     return(res)
+}
+
+#'
+#' annotate peptides using AhoCorasickTrie
+#'
+#' peptides which do not have protein assignment drop out
+#' @param pepseq - list of peptides - sequence, optional modified sequence, charge state.
+#' @param fasta - object as created by readPeptideFasta
+#' @import AhoCorasickTrie
+#' @import stringr
+#' @examples
+#'
+#' library(prozor)
+#' file = file.path(path.package("prozor"),"extdata/shortfasta.fasta" )
+#' fasta = readPeptideFasta(file = file)
+#' #res = annotateVec(pepprot[1:20,"peptideSeq"],fasta)
+#' system.time(res2 <- annotateAHO(pepprot[1:20,"peptideSeq"],fasta))
+#' colnames(res2)
+#' @export
+annotateAHO <- function(pepseq,fasta){
+    #100_000 peptides
+    #40_000 Proteine
+
+    pepseq <-stringr::str_trim(unique(pepseq))
+
+    proteinIDS <- names(unlist(fasta))
+    fasta <- stringr::str_trim(unlist(fasta))
+    names(fasta) <- proteinIDS
+
+    system.time(res <- AhoCorasickSearch(unique(pepseq) , unlist(fasta), alphabet = "aminoacid"))
+
+    simplifyAhoCorasickResult <- function(x, name){t <- as.data.frame(do.call("rbind",(x))); t$proteinID <- name; return(t)}
+    tmp <- mapply(simplifyAhoCorasickResult, res, names(res), SIMPLIFY=FALSE)
+
+    xx <- plyr::rbind.fill(tmp)
+    colnames(xx)[colnames(xx)=="Keyword"]<-"peptideSeq"
+    xx$peptideSeq <- as.character(xx$peptideSeq)
+    xx$Offset <- as.numeric(xx$Offset)
+    dbframe <- data.frame(proteinID = names(fasta), proteinSequence = as.character(unlist(fasta)),stringsAsFactors = FALSE)
+    matches <- merge(xx, dbframe )
+    return(matches)
+}
+
+.matchPepsequence <- function(matches, prefix= "(([RK])|(^)|(^M))", suffix =""){
+
+    seqpattern <-paste(prefix, matches$peptideSeq[1], suffix, sep="")
+    idx2 <- grep(seqpattern, matches$proteinSequence, fixed=FALSE)
+    if(length(idx2) > 0){
+        matchesres <- matches[idx2,]
+        matchesres$pattern <- seqpattern
+        return(matchesres)
+    }else{
+        return(NULL)
+    }
+
+}
+
+#'
+#' Filter for specific residues
+#'
+#' Will check if AA at Offset is a valid cleavage site
+#'
+#' @param matches must have 2 columns proteinSequnce and Offset
+#' @param prefix - regular expression describing the prefix of the peptide sequence e.g. (([RK])|(^)|(^M))
+#' @param suffix - regular expression describing the suffix of the peptide sequence
+#' @export
+#'
+filterSequences <- function(matches,prefix = "(([RK])|(^)|(^M))", suffix="" ){
+    x <- plyr::ddply(matches, ~peptideSeq, .matchPepsequence, prefix = prefix, suffix = suffix)
 }
 
 
