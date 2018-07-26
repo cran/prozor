@@ -2,25 +2,27 @@
 % Please edit documentation in R/createDecoyDB.R
 \name{createDecoyDB}
 \alias{createDecoyDB}
-\title{create db with decoys and contaminants}
+\title{Create db with decoys and contaminants}
 \usage{
-createDecoyDB(dbs, useContaminants = TRUE, revLab = "REV_",
-  annot = "zz|sourceOf|database")
+createDecoyDB(dbs, useContaminants = loadContaminantsFasta(),
+  revLab = "REV_", annot = "zz|sourceOf|database")
 }
 \arguments{
 \item{dbs}{a path to a fasta file or an array of files}
 
-\item{useContaminants}{add fgcz contaminants}
+\item{useContaminants}{list with contaminant sequences}
 
 \item{revLab}{label for reversed peptides (if NULL do not generate decoys)}
 
 \item{annot}{source of database}
 }
 \description{
-create db with decoys and contaminants
+For more details and references see package vignette
+\code{vignette("CreateDecoyDB", package = "prozor")}
 }
 \examples{
-file = file.path(path.package("prozor"),"extdata/uniprot_taxonomy_Oryctolagus_cuniculus.fasta.gz")
+#file = file.path(path.package("prozor"),"extdata/shortfasta.fasta.gz")
+file = system.file("extdata/fgcz_contaminants_20150123.fasta.gz",package = "prozor")
 cont <- loadContaminantsFasta()
 rabbit <-readPeptideFasta(file)
 tmp <- 2*(2*length(rabbit)+length(cont)) + 1
@@ -32,7 +34,7 @@ stopifnot(length(res) == tmp)
 
 res <- createDecoyDB(c(file,file), revLab=NULL)
 stopifnot(length(res) == (2*length(rabbit)+length(cont) + 1))
-res <- createDecoyDB(c(file,file), revLab=NULL, useContaminants = FALSE)
+res <- createDecoyDB(c(file,file), revLab=NULL, useContaminants = NULL)
 stopifnot(length(res) == (2*length(rabbit) + 1) )
 
 }
