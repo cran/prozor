@@ -4,28 +4,46 @@
 \alias{annotatePeptides}
 \title{Annotate peptides with protein ids}
 \usage{
-annotatePeptides(pepinfo, fasta, prefix = "(([RK])|(^)|(^M))", suffix = "")
+annotatePeptides(
+  pepinfo,
+  fasta,
+  peptide = "peptideSeq",
+  prefix = "(([RK])|(^)|(^M))",
+  suffix = ""
+)
 }
 \arguments{
 \item{pepinfo}{- list of peptides - sequence, optional modified sequence, charge state.}
 
 \item{fasta}{- object as created by readPeptideFasta}
 
+\item{peptide}{- name of column containing peptide sequences default "peptideSeq"}
+
 \item{prefix}{- default "(([RK])|(^)|(^M))"}
 
 \item{suffix}{- default ""}
+}
+\value{
+data.frame with columns "peptideSeq", "proteinID","Offset","proteinSequence","matched", "lengthPeptide","proteinlength"
 }
 \description{
 peptides which do not have protein assignment drop out
 }
 \examples{
-library(prozor)
-data(pepprot)
-file = system.file("extdata/shortfasta.fasta.gz",package = "prozor")
 
-fasta = readPeptideFasta(file = file)
-res = annotatePeptides(pepprot[1:20,], fasta)
+library(dplyr)
+
+file = system.file("extdata/IDResults.txt.gz" , package = "prozor")
+specMeta <- readr::read_tsv(file)
+upeptide <- unique(specMeta$peptideSeq)
+resCan <-
+   prozor::readPeptideFasta(
+       system.file("p1000_db1_example/Annotation_canSeq.fasta.gz" , package = "prozor"))
+
+annotAll = prozor::annotatePeptides(upeptide[seq_len(20)], resCan)
+dim(annotAll)
+
+res <-  mutate(annotAll, proteinlength = nchar(proteinSequence))
+res <-  select(res, proteinID, peptideSeq, proteinlength, Offset, lengthPeptide)
 head(res)
-res = annotatePeptides(pepprot[1:20,"peptideSeq"],fasta)
-length(res)
 }

@@ -1,22 +1,18 @@
 ---
-title: "Creating Target Decoy databases"
+title: "Creating Target Decoy Databases"
 author: "Witek Wolski"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Creating Target Decoy databases}
+  %\VignetteIndexEntry{Creating Target Decoy Databases}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-<!--
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Creating Target Decoy databases}
--->
 
 
-Using the package prozor for creating standarized fasta.
-prozor can be used to: 
+Using the package prozor for creating standardized fasta.
+The package can be used to: 
      
      * merge several fasta files into a single fasta file
      * add reverse sequences to the fasta file.
@@ -26,21 +22,21 @@ prozor can be used to:
 # Contaminants
 
 This package provides two sets of typical contaminant proteins and peptides, one with and one without contaminants of human origin, which can be accessed by the functions `loadContaminantsFasta` and `loadContaminantsNoHumanFasta`.
-At the [FGCZ](www.fgcz.ch) we always are adding one of those two contaminant files to the database. To databases already containing human proteins, we will add the `ContaminantsNoHumanFasta`.
+At the [FGCZ](https://fgcz.ch/) we always are adding one of those two contaminant files to the database. To databases already containing human proteins, we will add the `ContaminantsNoHumanFasta`.
 The contaminants are easy to distinguish from other entries thanks to the `zz|FGCZCont` prefix.
 
 ```{r}
 library(prozor)
-head(names(loadContaminantsFasta()))
-length(loadContaminantsFasta())
-length(loadContaminantsNoHumanFasta())
+head(names(loadContaminantsFasta2021()))
+length(loadContaminantsFasta2021())
+length(loadContaminantsFasta2021(noHuman = TRUE))
 
 ```
 
 # Creating a fasta protein amino acid sequence database for searching.
 
 To merge several _fasta_ databases into a single file place them into a single folder and give the folder the name of the database.
-At the [FGCZ](www.fgcz.ch) the database name starts with the project number e.g. `p1000` a consecutive number e.g. `db1` and descriptive name `example` i.e. `p1000_db1_example`.
+At the [FGCZ](https://fgcz.ch/) the database name starts with the project number e.g. `p1000` a consecutive number e.g. `db1` and descriptive name `example,i.e. `p1000_db1_example`.
 
 Add to the folder also an annotation.txt file. The annotation file should contain a single line formatted like a _fasta_ entry header with the following conent:
 `aa|p<project_number>_<database_name>|<YYYYMMDD> <detailed_description>`.
@@ -54,32 +50,37 @@ The package provides an example of such a folder with the fasta files. Based on 
 databasedirectory = system.file("p1000_db1_example",package = "prozor")
 #databasedirectory <- file.path(find.package("prozor"), "p1000_db1_example")
 dbname <- basename(databasedirectory)
-fasta <- grep("fasta", dir(databasedirectory),value = T)
+fasta <- grep("fasta", dir(databasedirectory),value = TRUE)
 files1 <- file.path(databasedirectory,fasta)
-annot <- grep("annotation",dir(databasedirectory), value=T)
+annot <- grep("annotation",dir(databasedirectory), value = TRUE)
 annotation <- readLines(file.path(databasedirectory,annot))
 annotation
+
 ```
 
 ## Create non decoy database
 
 
 ```{r}
-resDB <- createDecoyDB(files1, useContaminants = loadContaminantsFasta(), annot=annotation, revLab = NULL)
+resDB <- createDecoyDB(files1, useContaminants = loadContaminantsFasta2021(),
+                       annot = annotation, revLab = NULL)
 length(resDB)
+
 ```
 
 Based on the directory name we build the name of the fasta file adding the current date.
 
 ```{r}
 dirname(databasedirectory)
-xx <- file.path(dirname(databasedirectory), paste(dbname,"_",format(Sys.time(), "%Y%m%d"),".fasta" ,sep=""))
+xx <- file.path(dirname(databasedirectory), paste(dbname,"_",format(Sys.time(), "%Y%m%d"),".fasta" ,sep = ""))
 print(xx)
+
 ```
 
 
 ```{r eval=FALSE}
 writeFasta(resDB, file=xx)
+
 ```
 
 ## Create decoy database
@@ -90,8 +91,8 @@ The resulting database will be twice as long as the non-decoy database.
 
 ```{r}
 resDBDecoy <- createDecoyDB(files1,
-                            useContaminants = loadContaminantsFasta(),
-                            annot=annotation,
+                            useContaminants = loadContaminantsFasta2021(),
+                            annot = annotation,
                             revLab = "REV_")
 
 resDBDecoy[[length(resDBDecoy) - 1]]
@@ -101,14 +102,22 @@ sum(duplicated(names(resDBDecoy)))
 sum(duplicated(resDBDecoy))
 
 dbname_decoy <- unlist(strsplit(dbname,"_"))
-dbname_decoy <- paste(c(dbname_decoy[1],"d",dbname_decoy[2:length(dbname_decoy)]),collapse="_")
+dbname_decoy <- paste(c(dbname_decoy[1],"d",dbname_decoy[2:length(dbname_decoy)]),collapse = "_")
 dbname_decoy
 
-xx <- file.path(dirname(databasedirectory), paste(dbname_decoy,"_",format(Sys.time(), "%Y%m%d"),".fasta" ,sep=""))
+xx <- file.path(dirname(databasedirectory), paste(dbname_decoy,"_",format(Sys.time(), "%Y%m%d"),".fasta" ,sep = ""))
 print(xx)
+
 ```
 
 
 ```{r eval=FALSE}
-writeFasta(resDBDecoy, file=xx)
+writeFasta(resDBDecoy, file = xx)
+```
+
+
+# Session Info
+
+```{r}
+sessionInfo()
 ```

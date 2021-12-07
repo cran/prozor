@@ -1,9 +1,4 @@
-#' Data frame score and proteinID
-#'
-#' @name fdrSample
-#' @docType data
-#' @keywords data
-NULL
+
 
 #' Compute FDR given a score
 #'
@@ -18,11 +13,13 @@ NULL
 #' FDR1 false discovery rate estimated using the method of Elias and Gygi; FDR2 - estimated using the method of Kell.
 #' @export
 #' @examples
-#' library(prozor)
 #' data(fdrSample)
 #' # call constructor
+#' #nrow(fdrSample)
+#' #fdrSample <- dplyr::slice_sample(fdrSample, n = 40000)
 #'
-#' fdr1<-computeFDRwithID(fdrSample$score, fdrSample$proteinID, larger_better = FALSE)
+#' #usethis::use_data(fdrSample, overwrite = TRUE)
+#' fdr1 <- computeFDRwithID(fdrSample$score, fdrSample$proteinID, larger_better = FALSE)
 #' names(fdr1)
 #' plot(fdr1$score, fdr1$FPR,type="l",xlim=c(0,0.001), ylim=c(0,0.0002))
 #' lines(fdr1$score, fdr1$qValue_FPR, col=2)
@@ -30,19 +27,19 @@ NULL
 #' lines(fdr1$score, fdr1$qValue_SimpleFDR, col=5)
 #'
 #'
-#' fdr1<-computeFDRwithID(fdrSample$score2, fdrSample$proteinID, larger_better = TRUE)
+#' fdr1 <- computeFDRwithID(fdrSample$score2, fdrSample$proteinID, larger_better = TRUE)
 #' names(fdr1)
 #' plot(fdr1$score, fdr1$FPR,type="l", xlim=c(2.5,5),ylim=c(0,0.001))
 #' lines(fdr1$score, fdr1$qValue_FPR, col=2)
 #' lines(fdr1$score, fdr1$SimpleFDR,type="l",col=4)
 #' lines(fdr1$score, fdr1$qValue_SimpleFDR, col=5)
 #'
-computeFDRwithID <-function(score, ID, decoy = "REV_", larger_better = TRUE){
-  decoy_hit <- grepl(decoy, ID)
-  res <- computeFDR(score, decoy_hit, larger_better = larger_better)
-  ID <- ID[res$order]
-  res$ID <- ID
-  return(res)
+computeFDRwithID <- function(score, ID, decoy = "REV_", larger_better = TRUE){
+    decoy_hit <- grepl(decoy, ID)
+    res <- computeFDR(score, decoy_hit, larger_better = larger_better)
+    ID <- ID[res$order]
+    res$ID <- ID
+    return(res)
 }
 
 #' Compute FDR given a score
@@ -58,26 +55,32 @@ computeFDRwithID <-function(score, ID, decoy = "REV_", larger_better = TRUE){
 #' @return list with decoy_hit (indicates if decoy), score the search engine score,
 #' FDR1 false discovery rate estimated using the method of Gygi, SimpleFDR - estimated using the method of Kaell.
 #'
+#' @examples
+#' data(fdrSample)
+#'
+#' fdr1 <- computeFDR(fdrSample$score, grepl("REV_",fdrSample$proteinID), larger_better = FALSE)
+#' head(as.data.frame(fdr1))
+#'
 computeFDR <- function(score, decoy_hit , larger_better = TRUE){
-  ord <- order(score, decreasing=larger_better)
-  score <- score[ord]
-  decoy_hit <- decoy_hit[ord]
+    ord <- order(score, decreasing = larger_better)
+    score <- score[ord]
+    decoy_hit <- decoy_hit[ord]
 
-  FP <- cumsum(decoy_hit)
-  TP <- 1:length(ord) - FP
+    FP <- cumsum(decoy_hit)
+    TP <- seq_len(length(ord)) - FP
 
-  FPR <- (2 * FP) / (TP + FP)
-  SimpleFDR <- FP / TP
-  return(list(larger_better = larger_better,
-              order = ord,
-              decoy_hit = decoy_hit,
-              score = score,
-              FPR = FPR,
-              SimpleFDR = SimpleFDR,
-              qValue_FPR = rev( cummin( rev( FPR ) ) ),
-              qValue_SimpleFDR = rev(cummin( rev( SimpleFDR ) ) )
-              )
-         )
+    FPR <- (2 * FP) / (TP + FP)
+    SimpleFDR <- FP / TP
+    return(list(larger_better = larger_better,
+                order = ord,
+                decoy_hit = decoy_hit,
+                score = score,
+                FPR = FPR,
+                SimpleFDR = SimpleFDR,
+                qValue_FPR = rev( cummin( rev( FPR ) ) ),
+                qValue_SimpleFDR = rev(cummin( rev( SimpleFDR ) ) )
+    )
+    )
 }
 
 
@@ -88,26 +91,28 @@ computeFDR <- function(score, decoy_hit , larger_better = TRUE){
 #'
 #' @param data data returned by computeFDR function
 #' @export
+#' @return creates a plot
 #' @examples
-#' library(prozor)
+#' #library(prozor)
 #' data(fdrSample)
 #' fdr1 <- computeFDRwithID(fdrSample$score, fdrSample$proteinID, larger_better = FALSE)
 #' fdr2 <- computeFDRwithID(fdrSample$score2, fdrSample$proteinID, larger_better = TRUE)
 #' plotFDR(fdr1)
 #' plotFDR(fdr2)
 #' data<-fdr1
+#'
 plotFDR <- function(data){
-  graphics::par(mar=c(4,4,2,4))
-  tx <- with(data,graphics::hist(score,plot = FALSE, breaks=100))
-  t1 <- with(data,graphics::hist(score[!decoy_hit],breaks=tx$breaks,xlab="score",col=1, border=1,
-                                 main= ifelse(data$larger_better,"larger score better","smaller score better")))
-  with(data,graphics::hist(score[decoy_hit],add=T,breaks = t1$breaks, col=2,border=2))
-  graphics::par(new=T)
-  with(data,graphics::plot(score,qValue_FPR *100, type="l",col=4,lwd=2,xlab=NA,ylab=NA,axes=FALSE))
-  with(data,graphics::lines(score,qValue_SimpleFDR *100, type="l",col=3,lwd=2,xlab=NA,ylab=NA))
+    graphics::par(mar = c(4,4,2,4))
+    tx <- with(data,graphics::hist(score,plot = FALSE, breaks = 100))
+    t1 <- with(data,graphics::hist(score[!decoy_hit],breaks = tx$breaks, xlab = "score",col = 1, border = 1,
+                                   main = ifelse(data$larger_better,"larger score better","smaller score better")))
+    with(data,graphics::hist(score[decoy_hit],add = TRUE,breaks = t1$breaks, col = 2, border = 2))
+    graphics::par(new = TRUE)
+    with(data,graphics::plot(score,qValue_FPR * 100, type = "l",col = 4,lwd = 2,xlab = NA, ylab = NA , axes = FALSE))
+    with(data,graphics::lines(score,qValue_SimpleFDR  * 100, type = "l", col = 3,lwd = 2, xlab = NA, ylab = NA))
 
-  graphics::axis(side = 4)
-  graphics::mtext(side = 4, line = 3, 'FDR %')
+    graphics::axis(side = 4)
+    graphics::mtext(side = 4, line = 3, 'FDR %')
 }
 
 
@@ -119,10 +124,11 @@ plotFDR <- function(data){
 #' @param fdrObj object generated by computeFDR
 #' @param qValue false discovery rate in percent, default 1 percent
 #' @param method either FPR or SimpleFDR, default is SimpleFDR
+#' @return score for a given FDR
 #' @export
 #' @examples
 #' data(fdrSample)
-#' fdr1<-computeFDRwithID(fdrSample$score, fdrSample$proteinID, larger_better = FALSE)
+#' fdr1 <- computeFDRwithID(fdrSample$score, fdrSample$proteinID, larger_better = FALSE)
 #'
 #' predictScoreFDR(fdr1,qValue=5)
 #' fdr2<-computeFDRwithID(fdrSample$score2, fdrSample$proteinID, larger_better = TRUE)
@@ -131,18 +137,18 @@ plotFDR <- function(data){
 predictScoreFDR <- function(fdrObj,
                             qValue=1,
                             method="SimpleFDR"){
-  if(method=="FPR"){
-    validFDR <- fdrObj$qValue_FPR < qValue/100
-  } else if (method == "SimpleFDR") {
-    validFDR <- fdrObj$qValue_SimpleFDR < qValue/100
-  } else {
-    stop("no such method: ", method , "\n")
-  }
+    if (method == "FPR") {
+        validFDR <- fdrObj$qValue_FPR < qValue/100
+    } else if (method == "SimpleFDR") {
+        validFDR <- fdrObj$qValue_SimpleFDR < qValue/100
+    } else {
+        stop("no such method: ", method , "\n")
+    }
 
-  validScores <- fdrObj$score[validFDR]
-  if(!fdrObj$larger_better){
-    max(validScores)
-  }else{
-    min(validScores)
-  }
+    validScores <- fdrObj$score[validFDR]
+    if (!fdrObj$larger_better) {
+        max(validScores)
+    } else {
+        min(validScores)
+    }
 }

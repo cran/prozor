@@ -1,65 +1,313 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="Vignette Author" />
+<meta name="author" content="Witold Wolski" />
 
-<meta name="date" content="2018-07-26" />
+<meta name="date" content="2021-12-07" />
 
 <title>Target Decoy FDR</title>
 
 
-
-<style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
-div.sourceCode { overflow-x: auto; }
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
-  margin: 0; padding: 0; vertical-align: baseline; border: none; }
-table.sourceCode { width: 100%; line-height: 100%; }
-td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
-td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code > span.dt { color: #902000; } /* DataType */
-code > span.dv { color: #40a070; } /* DecVal */
-code > span.bn { color: #40a070; } /* BaseN */
-code > span.fl { color: #40a070; } /* Float */
-code > span.ch { color: #4070a0; } /* Char */
-code > span.st { color: #4070a0; } /* String */
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code > span.ot { color: #007020; } /* Other */
-code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code > span.fu { color: #06287e; } /* Function */
-code > span.er { color: #ff0000; font-weight: bold; } /* Error */
-code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-code > span.cn { color: #880000; } /* Constant */
-code > span.sc { color: #4070a0; } /* SpecialChar */
-code > span.vs { color: #4070a0; } /* VerbatimString */
-code > span.ss { color: #bb6688; } /* SpecialString */
-code > span.im { } /* Import */
-code > span.va { color: #19177c; } /* Variable */
-code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code > span.op { color: #666666; } /* Operator */
-code > span.bu { } /* BuiltIn */
-code > span.ex { } /* Extension */
-code > span.pp { color: #bc7a00; } /* Preprocessor */
-code > span.at { color: #7d9029; } /* Attribute */
-code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
+<style type="text/css" data-origin="pandoc">
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
 </style>
 
 
 
-<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
 
 </head>
 
@@ -69,27 +317,29 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 <h1 class="title toc-ignore">Target Decoy FDR</h1>
-<h4 class="author"><em>Vignette Author</em></h4>
-<h4 class="date"><em>2018-07-26</em></h4>
+<h4 class="author">Witold Wolski</h4>
+<h4 class="date">2021-12-07</h4>
 
 
 
-<!--
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteIndexEntry{Target Decoy FDR}
--->
+<p>Here we describe how you can estimate the false discovery rate (FDR) when matching your spectra against a FASTA sequence database using spectra search engines such as Mascot or Comet. The sequence database contains forward sequences and the same number of reverse sequences.</p>
 <div id="the-data" class="section level2">
 <h2>The data</h2>
-<p>The package provides sample data. The data needs to have two columns, one with a label, to distinguish targets and decoys, the other with a score. Then you also need to know if a larger score or a smaller score is better. In our example data, we have two scores: <code>score</code> and <code>score2</code>. While the <code>score</code> is better if it smaller, <code>score2</code> is better if it is larger.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())
-<span class="kw">library</span>(dplyr)
-<span class="kw">library</span>(prozor)
-<span class="kw">data</span>(fdrSample)
-x &lt;-dplyr<span class="op">::</span><span class="kw">arrange</span>(fdrSample, score2)
-knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(fdrSample))</code></pre></div>
+<p>The data needs to have two columns, one with a label, to distinguish targets and decoys, the other with a score. Then you also need to know if a larger score or a smaller score is better. In our example data, we have two scores: <code>score</code> and <code>score2</code>. While the <code>score</code> is better if it smaller (e.g, posterior erro probability), <code>score2</code> is better if it is larger.</p>
+<div class="figure">
+<img src="data:image/png;base64,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" alt="Black line - Score distribution of decoy hits. Green line - Score distribution of vorward hits. TN - true netagive, FN - false negative, FP - false postitive, TP - true positive" />
+<p class="caption">Black line - Score distribution of decoy hits. Green line - Score distribution of vorward hits. TN - true netagive, FN - false negative, FP - false postitive, TP - true positive</p>
+</div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">rm</span>(<span class="dt">list =</span> <span class="kw">ls</span>())</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="kw">library</span>(dplyr)</a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">library</span>(prozor)</a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">data</span>(fdrSample)</a>
+<a class="sourceLine" id="cb1-5" title="5">x &lt;-<span class="st"> </span>dplyr<span class="op">::</span><span class="kw">arrange</span>(fdrSample, score2)</a>
+<a class="sourceLine" id="cb1-6" title="6">knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(fdrSample))</a></code></pre></div>
 <table>
 <thead>
 <tr class="header">
+<th align="left"></th>
 <th align="left">proteinID</th>
 <th align="right">score</th>
 <th align="right">score2</th>
@@ -97,49 +347,56 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">sp|P0C0L4|CO4A_HUMAN</td>
-<td align="right">0.0000008</td>
-<td align="right">6.121995</td>
+<td align="left">28064</td>
+<td align="left">sp|P00738|HPT_HUMAN</td>
+<td align="right">0.0030141</td>
+<td align="right">2.520847</td>
 </tr>
 <tr class="even">
-<td align="left">sp|P0C0L4|CO4A_HUMAN</td>
-<td align="right">0.0000023</td>
-<td align="right">5.640072</td>
+<td align="left">47194</td>
+<td align="left">sp|P19823|ITIH2_HUMAN</td>
+<td align="right">0.0008878</td>
+<td align="right">3.051662</td>
 </tr>
 <tr class="odd">
-<td align="left">sp|P0C0L4|CO4A_HUMAN</td>
-<td align="right">0.0288739</td>
-<td align="right">1.539495</td>
+<td align="left">8916</td>
+<td align="left">sp|Q86WI1|PKHL1_HUMAN</td>
+<td align="right">0.0350109</td>
+<td align="right">1.455797</td>
 </tr>
 <tr class="even">
-<td align="left">sp|P0C0L4|CO4A_HUMAN</td>
-<td align="right">0.0019398</td>
-<td align="right">2.712251</td>
+<td align="left">37157</td>
+<td align="left">sp|P04003|C4BPA_HUMAN</td>
+<td align="right">0.0018141</td>
+<td align="right">2.741330</td>
 </tr>
 <tr class="odd">
-<td align="left">sp|P0C0L4|CO4A_HUMAN</td>
-<td align="right">0.0000001</td>
-<td align="right">7.231987</td>
+<td align="left">60963</td>
+<td align="left">sp|P01876|IGHA1_HUMAN</td>
+<td align="right">0.0000013</td>
+<td align="right">5.897889</td>
 </tr>
 <tr class="even">
-<td align="left">sp|P0C0L4|CO4A_HUMAN</td>
-<td align="right">0.0000063</td>
-<td align="right">5.203215</td>
+<td align="left">89689</td>
+<td align="left">sp|P01042|KNG1_HUMAN</td>
+<td align="right">0.0000000</td>
+<td align="right">12.305967</td>
 </tr>
 </tbody>
 </table>
-<p>What is also required is that the number of Targets and Decoys are the same. This is usually given for mass spectrometry database searches. Our dataset here is truncated already at a 5% FDR. Therefore the number of decoys is much smaller.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">table</span>(<span class="kw">grepl</span>(<span class="st">&quot;REV_&quot;</span>,fdrSample<span class="op">$</span>proteinID))</code></pre></div>
+<p>What is also required is that the number of Targets and Decoys are the same. This is given for mass spectrometry database searches. Our dataset here is already truncated at a 5% FDR. Therefore the number of decoys is much smaller.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">table</span>(<span class="kw">grepl</span>(<span class="st">&quot;REV_&quot;</span>,fdrSample<span class="op">$</span>proteinID))</a></code></pre></div>
 <pre><code>## 
 ## FALSE  TRUE 
-## 88782  1933</code></pre>
+## 39142   858</code></pre>
 <p>In our example, we will use the package to filter the data further for a 1% FDR.</p>
-<p>Computing the FDR can be done by calling the function <code>computeFDR</code>. <code>plotFDR</code> than shows the score distribution for the targets (black) and decoys (red) as well as the FDR for each score (x axis).</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fdr1 &lt;-<span class="st"> </span><span class="kw">computeFDR</span>(fdrSample<span class="op">$</span>score, <span class="kw">grepl</span>(<span class="st">&quot;REV_&quot;</span>,fdrSample<span class="op">$</span>proteinID),<span class="dt">larger_better =</span> <span class="ot">FALSE</span>)
-<span class="kw">plotFDR</span>(fdr1)</code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>Computing the FDR can be done by calling the function <code>computeFDR</code>. <code>plotFDR</code> than shows the score distribution for the targets (black) and decoys (red) as well as the FDR for the two scores implemented (x axis).</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb4-1" title="1">fdr1 &lt;-<span class="st"> </span><span class="kw">computeFDR</span>(fdrSample<span class="op">$</span>score, <span class="kw">grepl</span>(<span class="st">&quot;REV_&quot;</span>,fdrSample<span class="op">$</span>proteinID),<span class="dt">larger_better =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="kw">plotFDR</span>(fdr1)</a>
+<a class="sourceLine" id="cb4-3" title="3"><span class="kw">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="dt">legend =</span> <span class="kw">c</span>(<span class="st">&quot;FPR&quot;</span>, <span class="st">&quot;qValue/FDR&quot;</span>), <span class="dt">lty =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">col =</span> <span class="kw">c</span>(<span class="dv">4</span>,<span class="dv">3</span>))</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
 <p>The output is a named list which can be easily converted into a data frame. We next will briefly discuss the elements of the output.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(<span class="kw">data.frame</span>(fdr1)))</code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" title="1">knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(<span class="kw">data.frame</span>(fdr1)))</a></code></pre></div>
 <table>
 <thead>
 <tr class="header">
@@ -156,7 +413,7 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 <tbody>
 <tr class="odd">
 <td align="left">FALSE</td>
-<td align="right">26160</td>
+<td align="right">287</td>
 <td align="left">FALSE</td>
 <td align="right">0</td>
 <td align="right">0</td>
@@ -166,7 +423,7 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 </tr>
 <tr class="even">
 <td align="left">FALSE</td>
-<td align="right">26265</td>
+<td align="right">3581</td>
 <td align="left">FALSE</td>
 <td align="right">0</td>
 <td align="right">0</td>
@@ -176,7 +433,7 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 </tr>
 <tr class="odd">
 <td align="left">FALSE</td>
-<td align="right">26156</td>
+<td align="right">29584</td>
 <td align="left">FALSE</td>
 <td align="right">0</td>
 <td align="right">0</td>
@@ -186,7 +443,7 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 </tr>
 <tr class="even">
 <td align="left">FALSE</td>
-<td align="right">26158</td>
+<td align="right">26559</td>
 <td align="left">FALSE</td>
 <td align="right">0</td>
 <td align="right">0</td>
@@ -196,7 +453,7 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 </tr>
 <tr class="odd">
 <td align="left">FALSE</td>
-<td align="right">26253</td>
+<td align="right">15524</td>
 <td align="left">FALSE</td>
 <td align="right">0</td>
 <td align="right">0</td>
@@ -206,204 +463,29 @@ knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">he
 </tr>
 <tr class="even">
 <td align="left">FALSE</td>
-<td align="right">26286</td>
+<td align="right">30840</td>
 <td align="left">FALSE</td>
 <td align="right">0</td>
 <td align="right">0</td>
 <td align="right">0</td>
 <td align="right">0</td>
 <td align="right">0</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div id="the-order-column" class="section level2">
-<h2>The order column</h2>
-<p>Since the scores are sorted to compute the FDR, we return also the <em>order</em> column. This column can be used to align the ID’s with the scores.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(<span class="kw">data.frame</span>(<span class="dt">ID =</span> fdrSample<span class="op">$</span>proteinID[fdr1<span class="op">$</span>order], fdr1)))</code></pre></div>
-<table>
-<thead>
-<tr class="header">
-<th align="left">ID</th>
-<th align="left">larger_better</th>
-<th align="right">order</th>
-<th align="left">decoy_hit</th>
-<th align="right">score</th>
-<th align="right">FPR</th>
-<th align="right">SimpleFDR</th>
-<th align="right">qValue_FPR</th>
-<th align="right">qValue_SimpleFDR</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">sp|P04264|K2C1_HUMAN</td>
-<td align="left">FALSE</td>
-<td align="right">26160</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="left">sp|P35527|K1C9_HUMAN</td>
-<td align="left">FALSE</td>
-<td align="right">26265</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="left">sp|P04264|K2C1_HUMAN</td>
-<td align="left">FALSE</td>
-<td align="right">26156</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="left">sp|P04264|K2C1_HUMAN</td>
-<td align="left">FALSE</td>
-<td align="right">26158</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="left">sp|P35527|K1C9_HUMAN</td>
-<td align="left">FALSE</td>
-<td align="right">26253</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="left">sp|P35527|K1C9_HUMAN</td>
-<td align="left">FALSE</td>
-<td align="right">26286</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-<p>For convinience we provide the function <code>computeFDRwithID</code> which integrates the reordering of the ID’s.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">fdr1 &lt;-<span class="st"> </span><span class="kw">computeFDRwithID</span>(fdrSample<span class="op">$</span>score,fdrSample<span class="op">$</span>proteinID, <span class="dt">decoy =</span> <span class="st">&quot;REV_&quot;</span>,<span class="dt">larger_better =</span> <span class="ot">FALSE</span>)
-knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(<span class="kw">data.frame</span>(fdr1)))</code></pre></div>
-<table>
-<thead>
-<tr class="header">
-<th align="left">larger_better</th>
-<th align="right">order</th>
-<th align="left">decoy_hit</th>
-<th align="right">score</th>
-<th align="right">FPR</th>
-<th align="right">SimpleFDR</th>
-<th align="right">qValue_FPR</th>
-<th align="right">qValue_SimpleFDR</th>
-<th align="left">ID</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">FALSE</td>
-<td align="right">26160</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="left">sp|P04264|K2C1_HUMAN</td>
-</tr>
-<tr class="even">
-<td align="left">FALSE</td>
-<td align="right">26265</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="left">sp|P35527|K1C9_HUMAN</td>
-</tr>
-<tr class="odd">
-<td align="left">FALSE</td>
-<td align="right">26156</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="left">sp|P04264|K2C1_HUMAN</td>
-</tr>
-<tr class="even">
-<td align="left">FALSE</td>
-<td align="right">26158</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="left">sp|P04264|K2C1_HUMAN</td>
-</tr>
-<tr class="odd">
-<td align="left">FALSE</td>
-<td align="right">26253</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="left">sp|P35527|K1C9_HUMAN</td>
-</tr>
-<tr class="even">
-<td align="left">FALSE</td>
-<td align="right">26286</td>
-<td align="left">FALSE</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="left">sp|P35527|K1C9_HUMAN</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div id="types-of-fdr" class="section level2">
 <h2>Types of FDR</h2>
-<p>There are various types of measures in result dataframe.</p>
-<p>We define here</p>
-<pre><code> * FP as the number of passing decoy assignments
- * TP as the number of passing forward hits.</code></pre>
+<p>We define</p>
+<pre><code> * false postivies (FP) as the number of passing decoy assignments
+ * true positives (TP) as the number of passing forward hits.</code></pre>
 <div id="false-postive-rate" class="section level3">
 <h3>False postive rate</h3>
 <p>Which is the “Fraction of incorrect assignments above score threshold”. The multiplier 2 is needed here since we assume that also the forward sequences have false assignments.</p>
 <p><span class="math display">\[
 FPR = \frac{2 \cdot FP}{TP + FP}
 \]</span></p>
-<p>This is taken from the reference by <span class="citation">(Elias and Gygi 2007)</span>. <span class="citation">(Storey and Tibshirani 2003)</span> defines FPR differently. Kaell points out that the FPR here actually should be named FDR and that “Many proteomics papers incorrectly refer to this quantity as the <em>false positive rate</em>.” .</p>
+<p>This is taken from the reference by <span class="citation">(Elias and Gygi 2007)</span>. <span class="citation">(Storey and Tibshirani 2003)</span> defines FPR differently. Kaell points out that the FPR here actually should be named FDR and that “Many proteomics papers incorrectly refer to this quantity as the <em>false positive rate</em>.”</p>
 </div>
 <div id="simple-fdr" class="section level3">
 <h3>Simple FDR</h3>
@@ -413,47 +495,262 @@ FPR = \frac{2 \cdot FP}{TP + FP}
 SimpleFDR =  \frac{FP}{TP}
 \]</span></p>
 <p>“For a given score threshold, we count the number of decoy PSMs above the threshold and the number of target PSMs above the threshold. We can now estimate the FDR by simply computing the ratio of these two values (SimpleFDR).”<span class="citation">(Käll et al. 2007)</span></p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(fdr1<span class="op">$</span>score, fdr1<span class="op">$</span>SimpleFDR, <span class="dt">type=</span><span class="st">&quot;l&quot;</span>, <span class="dt">xlim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="fl">0.002</span>), <span class="dt">ylim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="fl">0.0005</span>))
-<span class="kw">lines</span>(fdr1<span class="op">$</span>score, fdr1<span class="op">$</span>qValue_SimpleFDR, <span class="dt">col=</span><span class="dv">3</span>, <span class="dt">type=</span><span class="st">&quot;l&quot;</span>, <span class="dt">xlim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="fl">0.002</span>), <span class="dt">ylim=</span><span class="kw">c</span>(<span class="op">-</span><span class="fl">0.002</span>,<span class="dv">0</span>))</code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
-<p>However, although the score is getting better (smaller) the FDR may increase since the number of TP in the denominator decreases while the number of FP stays the same. Therefore Storey and Tibshirani proposed the <em>q-value</em>, “which in our case is defined as the minimal FDR threshold at which a given PSM is accepted”<span class="citation">(Käll et al. 2007)</span>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">plot</span>(fdr1<span class="op">$</span>score, fdr1<span class="op">$</span>SimpleFDR, <span class="dt">type =</span> <span class="st">&quot;l&quot;</span>, <span class="dt">xlim =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="fl">0.002</span>), <span class="dt">ylim =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="fl">0.0005</span>))</a>
+<a class="sourceLine" id="cb7-2" title="2"><span class="kw">lines</span>(fdr1<span class="op">$</span>score, fdr1<span class="op">$</span>qValue_SimpleFDR, <span class="dt">col =</span> <span class="dv">3</span>, <span class="dt">type =</span> <span class="st">&quot;l&quot;</span>, <span class="dt">xlim =</span> <span class="kw">c</span>(<span class="dv">0</span>,<span class="fl">0.002</span>), <span class="dt">ylim =</span> <span class="kw">c</span>(<span class="op">-</span><span class="fl">0.002</span>,<span class="dv">0</span>))</a>
+<a class="sourceLine" id="cb7-3" title="3"><span class="kw">legend</span>(<span class="st">&quot;topleft&quot;</span>, <span class="dt">legend =</span> <span class="kw">c</span>(<span class="st">&quot;FDR&quot;</span>, <span class="st">&quot;qValue&quot;</span>), <span class="dt">lty =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>), <span class="dt">col =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">3</span>))</a></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>Although the score is getting better (smaller) the FDR may increase since the number of TP in the denominator decreases while the number of FP stays the same. Therefore Storey and Tibshirani proposed the <em>q-value</em>, “which in our case is defined as the minimal FDR threshold at which a given PSM is accepted”<span class="citation">(Käll et al. 2007)</span>.</p>
 </div>
 </div>
 <div id="getting-the-score-for-an-fdr." class="section level2">
 <h2>Getting the score for an FDR.</h2>
 <p>Most frequently you will need to get the score for an FDR in order to filter your data. To report your data with an FDR of 1% instead of 5% you can execute this code:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">names</span>(fdr1)</code></pre></div>
-<pre><code>## [1] &quot;larger_better&quot;    &quot;order&quot;            &quot;decoy_hit&quot;       
-## [4] &quot;score&quot;            &quot;FPR&quot;              &quot;SimpleFDR&quot;       
-## [7] &quot;qValue_FPR&quot;       &quot;qValue_SimpleFDR&quot; &quot;ID&quot;</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(score01G &lt;-<span class="st"> </span><span class="kw">predictScoreFDR</span>(fdr1,<span class="dt">qValue =</span> <span class="dv">5</span>,<span class="dt">method =</span> <span class="st">&quot;FPR&quot;</span>))</code></pre></div>
-<pre><code>## [1] 0.09996855</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(dplyr<span class="op">::</span><span class="kw">filter</span>(fdrSample, score <span class="op">&lt;</span><span class="st"> </span>score01G))</code></pre></div>
-<pre><code>## [1] 90714     3</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(score01G &lt;-<span class="st"> </span><span class="kw">predictScoreFDR</span>(fdr1,<span class="dt">qValue =</span> <span class="dv">1</span>,<span class="dt">method =</span> <span class="st">&quot;FPR&quot;</span>))</code></pre></div>
-<pre><code>## [1] 0.007166919</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(dplyr<span class="op">::</span><span class="kw">filter</span>(fdrSample, score <span class="op">&lt;</span><span class="st"> </span>score01G))</code></pre></div>
-<pre><code>## [1] 64469     3</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">(score01K &lt;-<span class="st"> </span><span class="kw">predictScoreFDR</span>(fdr1,<span class="dt">qValue =</span> <span class="dv">1</span>,<span class="dt">method =</span> <span class="st">&quot;SimpleFDR&quot;</span>))</code></pre></div>
-<pre><code>## [1] 0.02797633</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">dim</span>(dplyr<span class="op">::</span><span class="kw">filter</span>(fdrSample, score <span class="op">&lt;</span><span class="st"> </span>score01K))</code></pre></div>
-<pre><code>## [1] 77266     3</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" title="1">(score01G &lt;-<span class="st"> </span><span class="kw">predictScoreFDR</span>(fdr1,<span class="dt">qValue =</span> <span class="dv">5</span>,<span class="dt">method =</span> <span class="st">&quot;FPR&quot;</span>))</a></code></pre></div>
+<pre><code>## [1] 0.09991592</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" title="1"><span class="kw">dim</span>(dplyr<span class="op">::</span><span class="kw">filter</span>(fdrSample, score <span class="op">&lt;</span><span class="st"> </span>score01G))</a></code></pre></div>
+<pre><code>## [1] 39999     3</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" title="1">(score01G &lt;-<span class="st"> </span><span class="kw">predictScoreFDR</span>(fdr1,<span class="dt">qValue =</span> <span class="dv">1</span>,<span class="dt">method =</span> <span class="st">&quot;FPR&quot;</span>))</a></code></pre></div>
+<pre><code>## [1] 0.008509834</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">dim</span>(dplyr<span class="op">::</span><span class="kw">filter</span>(fdrSample, score <span class="op">&lt;</span><span class="st"> </span>score01G))</a></code></pre></div>
+<pre><code>## [1] 29179     3</code></pre>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" title="1">(score01K &lt;-<span class="st"> </span><span class="kw">predictScoreFDR</span>(fdr1,<span class="dt">qValue =</span> <span class="dv">1</span>,<span class="dt">method =</span> <span class="st">&quot;SimpleFDR&quot;</span>))</a></code></pre></div>
+<pre><code>## [1] 0.03394749</code></pre>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">dim</span>(dplyr<span class="op">::</span><span class="kw">filter</span>(fdrSample, score <span class="op">&lt;</span><span class="st"> </span>score01K))</a></code></pre></div>
+<pre><code>## [1] 34875     3</code></pre>
+</div>
+<div id="the-order-column" class="section level2">
+<h2>The order column</h2>
+<p>Since the scores are sorted to compute the FDR, we return also the <em>order</em> column. This column can be used to align the ID’s with the scores.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" title="1">knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(<span class="kw">data.frame</span>(<span class="dt">ID =</span> fdrSample<span class="op">$</span>proteinID[fdr1<span class="op">$</span>order], fdr1)))</a></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">ID</th>
+<th align="left">larger_better</th>
+<th align="right">order</th>
+<th align="left">decoy_hit</th>
+<th align="right">score</th>
+<th align="right">FPR</th>
+<th align="right">SimpleFDR</th>
+<th align="right">qValue_FPR</th>
+<th align="right">qValue_SimpleFDR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+<td align="left">FALSE</td>
+<td align="right">287</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+<td align="left">FALSE</td>
+<td align="right">3581</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">sp|P35527|K1C9_HUMAN</td>
+<td align="left">FALSE</td>
+<td align="right">29584</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+<td align="left">FALSE</td>
+<td align="right">26559</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">sp|P02768|ALBU_HUMAN</td>
+<td align="left">FALSE</td>
+<td align="right">15524</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+<td align="left">FALSE</td>
+<td align="right">30840</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p>For convenience we provide the function <code>computeFDRwithID</code> which integrates the reordering of the ID’s.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" title="1">fdr1 &lt;-<span class="st"> </span><span class="kw">computeFDRwithID</span>(fdrSample<span class="op">$</span>score,fdrSample<span class="op">$</span>proteinID, <span class="dt">decoy =</span> <span class="st">&quot;REV_&quot;</span>,<span class="dt">larger_better =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb21-2" title="2">knitr<span class="op">::</span><span class="kw">kable</span>(<span class="kw">head</span>(<span class="kw">data.frame</span>(fdr1)))</a></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">larger_better</th>
+<th align="right">order</th>
+<th align="left">decoy_hit</th>
+<th align="right">score</th>
+<th align="right">FPR</th>
+<th align="right">SimpleFDR</th>
+<th align="right">qValue_FPR</th>
+<th align="right">qValue_SimpleFDR</th>
+<th align="left">ID</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">FALSE</td>
+<td align="right">287</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+</tr>
+<tr class="even">
+<td align="left">FALSE</td>
+<td align="right">3581</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+</tr>
+<tr class="odd">
+<td align="left">FALSE</td>
+<td align="right">29584</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">sp|P35527|K1C9_HUMAN</td>
+</tr>
+<tr class="even">
+<td align="left">FALSE</td>
+<td align="right">26559</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+</tr>
+<tr class="odd">
+<td align="left">FALSE</td>
+<td align="right">15524</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">sp|P02768|ALBU_HUMAN</td>
+</tr>
+<tr class="even">
+<td align="left">FALSE</td>
+<td align="right">30840</td>
+<td align="left">FALSE</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="left">sp|P04264|K2C1_HUMAN</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="session-info" class="section level1">
+<h1>Session Info</h1>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">sessionInfo</span>()</a></code></pre></div>
+<pre><code>## R version 4.1.1 (2021-08-10)
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+## Running under: Windows 10 x64 (build 19044)
+## 
+## Matrix products: default
+## 
+## locale:
+## [1] LC_COLLATE=C                          
+## [2] LC_CTYPE=English_United States.1252   
+## [3] LC_MONETARY=English_United States.1252
+## [4] LC_NUMERIC=C                          
+## [5] LC_TIME=English_United States.1252    
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] dplyr_1.0.7  Matrix_1.3-4 prozor_0.3.1
+## 
+## loaded via a namespace (and not attached):
+##  [1] Rcpp_1.0.7            highr_0.9             bslib_0.3.1          
+##  [4] compiler_4.1.1        pillar_1.6.4          jquerylib_0.1.4      
+##  [7] tools_4.1.1           bit_4.0.4             digest_0.6.28        
+## [10] docopt_0.7.1          jsonlite_1.7.2        evaluate_0.14        
+## [13] lifecycle_1.0.1       tibble_3.1.4          lattice_0.20-44      
+## [16] AhoCorasickTrie_0.1.2 pkgconfig_2.0.3       rlang_0.4.11         
+## [19] DBI_1.1.1             cli_3.1.0             parallel_4.1.1       
+## [22] yaml_2.2.1            xfun_0.26             fastmap_1.1.0        
+## [25] stringr_1.4.0         knitr_1.36            generics_0.1.1       
+## [28] sass_0.4.0            vctrs_0.3.8           hms_1.1.1            
+## [31] tidyselect_1.1.1      bit64_4.0.5           ade4_1.7-18          
+## [34] grid_4.1.1            glue_1.4.2            R6_2.5.1             
+## [37] fansi_0.5.0           vroom_1.5.6           rmarkdown_2.11       
+## [40] tzdb_0.1.2            purrr_0.3.4           readr_2.0.1          
+## [43] seqinr_4.2-8          magrittr_2.0.1        htmltools_0.5.2      
+## [46] ellipsis_0.3.2        MASS_7.3-54           assertthat_0.2.1     
+## [49] utf8_1.2.2            stringi_1.7.4         crayon_1.4.2</code></pre>
 </div>
 <div id="references" class="section level1 unnumbered">
 <h1>References</h1>
 <div id="refs" class="references">
 <div id="ref-Elias2007">
-<p>Elias, Joshua E, and Steven P Gygi. 2007. “Target-Decoy Search Strategy for Increased Confidence in Large-Scale Protein Identifications by Mass Spectrometry.” <em>Nature Methods</em> 4 (3). Nature Publishing Group: 207–14.</p>
+<p>Elias, Joshua E, and Steven P Gygi. 2007. “Target-Decoy Search Strategy for Increased Confidence in Large-Scale Protein Identifications by Mass Spectrometry.” <em>Nature Methods</em> 4 (3): 207–14.</p>
 </div>
 <div id="ref-Kaell2007">
-<p>Käll, Lukas, John D Storey, Michael J MacCoss, and William Stafford Noble. 2007. “Assigning Significance to Peptides Identified by Tandem Mass Spectrometry Using Decoy Databases.” <em>Journal of Proteome Research</em> 7 (01). ACS Publications: 29–34.</p>
+<p>Käll, Lukas, John D Storey, Michael J MacCoss, and William Stafford Noble. 2007. “Assigning Significance to Peptides Identified by Tandem Mass Spectrometry Using Decoy Databases.” <em>Journal of Proteome Research</em> 7 (01): 29–34.</p>
 </div>
 <div id="ref-Storey2003">
-<p>Storey, John D, and Robert Tibshirani. 2003. “Statistical Significance for Genomewide Studies.” <em>Proceedings of the National Academy of Sciences</em> 100 (16). National Acad Sciences: 9440–5.</p>
+<p>Storey, John D, and Robert Tibshirani. 2003. “Statistical Significance for Genomewide Studies.” <em>Proceedings of the National Academy of Sciences</em> 100 (16): 9440–5.</p>
 </div>
 </div>
 </div>
 
+
+
+<!-- code folding -->
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->

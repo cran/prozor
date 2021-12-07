@@ -4,8 +4,12 @@
 \alias{createDecoyDB}
 \title{Create db with decoys and contaminants}
 \usage{
-createDecoyDB(dbs, useContaminants = loadContaminantsFasta(),
-  revLab = "REV_", annot = "zz|sourceOf|database")
+createDecoyDB(
+  dbs,
+  useContaminants = loadContaminantsFasta2021(),
+  revLab = "REV_",
+  annot = "zz|sourceOf|database"
+)
 }
 \arguments{
 \item{dbs}{a path to a fasta file or an array of files}
@@ -16,20 +20,21 @@ createDecoyDB(dbs, useContaminants = loadContaminantsFasta(),
 
 \item{annot}{source of database}
 }
+\value{
+list of SeqFastaAA entries
+}
 \description{
 For more details and references see package vignette
 \code{vignette("CreateDecoyDB", package = "prozor")}
 }
 \examples{
-#file = file.path(path.package("prozor"),"extdata/shortfasta.fasta.gz")
-file = system.file("extdata/fgcz_contaminants_20150123.fasta.gz",package = "prozor")
-cont <- loadContaminantsFasta()
+file = system.file("extdata/fgcz_contaminants2021_20210929.fasta.gz",package="prozor")
+cont <- loadContaminantsFasta2021()
 rabbit <-readPeptideFasta(file)
 tmp <- 2*(2*length(rabbit)+length(cont)) + 1
 
 res <- createDecoyDB(c(file,file))
 length(res)
-tmp
 stopifnot(length(res) == tmp)
 
 res <- createDecoyDB(c(file,file), revLab=NULL)

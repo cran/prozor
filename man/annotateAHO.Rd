@@ -9,17 +9,26 @@ annotateAHO(pepseq, fasta)
 \arguments{
 \item{pepseq}{- list of peptides - sequence, optional modified sequence, charge state.}
 
-\item{fasta}{- object as created by readPeptideFasta}
+\item{fasta}{- object as created by \code{readPeptideFasta}}
+}
+\value{
+A data.frame with proteinID, peptideSeq, Offset and proteinSequence
 }
 \description{
 peptides which do not have protein assignment drop out
 }
 \examples{
 
-library(prozor)
-file = system.file("extdata/shortfasta.fasta.gz",package = "prozor")
-fasta = readPeptideFasta(file = file)
-pepprot <- get(data("pepprot", package = "prozor"))
-system.time( res2 <- annotateAHO( pepprot[1:20,"peptideSeq"], fasta))
-colnames(res2)
+library(dplyr)
+
+file = system.file("extdata/IDResults.txt.gz" , package = "prozor")
+specMeta <- readr::read_tsv(file)
+upeptide <- unique(specMeta$peptideSeq)
+resCan <-
+   prozor::readPeptideFasta(
+       system.file("p1000_db1_example/Annotation_canSeq.fasta.gz" , package = "prozor"))
+resCanU <- resCan[!duplicated(unlist(resCan))]
+annotAll = annotateAHO(upeptide[seq_len(20)], resCanU)
+dim(annotAll)
+
 }

@@ -1,92 +1,98 @@
-## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(echo = TRUE)
+## ----setup, include=FALSE-----------------------------------------------------
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 
-## ------------------------------------------------------------------------
+## ----loadData-----------------------------------------------------------------
 library(prozor)
-#library(reshape2)
 
-rm(list=ls())
+rm(list = ls())
 
 file = system.file("extdata/IDResults.txt.gz" , package = "prozor")
 specMeta <- readr::read_tsv(file)
+head(specMeta)
 
 
-## ------------------------------------------------------------------------
-
-nrow(specMeta)
-hist(specMeta$score, breaks=100)
-
-
-## ------------------------------------------------------------------------
+## ----fig.cap = "Number of proteins in the All and Canonical database."--------
 length(unique(specMeta$peptideSeq))
-upeptide <-unique(specMeta$peptideSeq)
+upeptide <- unique(specMeta$peptideSeq)
 
-resAll <- prozor::readPeptideFasta(system.file("extdata/Annotation_allSeq.fasta.gz" , package = "prozor"))
-resRev <- prozor::readPeptideFasta(system.file("extdata/Annotation_canSeq.fasta.gz" , package = "prozor"))
+resAll <-
+    prozor::readPeptideFasta(
+        system.file("p1000_db1_example/Annotation_allSeq.fasta.gz" , package = "prozor"))
 
-annotAll <- prozor::annotatePeptides(upeptide,resAll)
-pcAll <- length(unique(annotAll$peptideSeq))/ length(upeptide)
+resCan <-
+    prozor::readPeptideFasta(
+        system.file("p1000_db1_example/Annotation_canSeq.fasta.gz" , package = "prozor"))
 
-annotRev <- prozor::annotatePeptides(upeptide, resRev)
-pcCan <-length(unique(annotRev$peptideSeq))/ length(upeptide)
+annotAll <- prozor::annotatePeptides(upeptide, resAll)
+head(subset(annotAll,select =  -proteinSequence))
+annotCan <- prozor::annotatePeptides(upeptide, resCan)
+barplot(c(All = length(resAll),Canonical = length(resCan)))
 
-barplot(c(Canonical = pcCan, All = pcAll))
+## ----fig.cap="Number of unique peptide protein pairs  for the All and Canonical database."----
+barplot(c(All = nrow(annotAll), Canonical = nrow(annotCan)), ylab = "# peptide protein matches.")
 
+## -----------------------------------------------------------------------------
+PCProteotypic_all <-
+    sum(table(annotAll$peptideSeq) == 1) / length(table(annotAll$peptideSeq)) * 100
+PCProteotypic_canonical <-
+    sum(table(annotCan$peptideSeq) == 1) / length(table(annotCan$peptideSeq)) * 100
 
-## ---- fig="Nr of protein ID's per peptide"-------------------------------
-
-par(mfrow=c(1,3))
-plot(sort(table(annotAll$peptideSeq)),axes=F, ylab="Nr protein IDs")
-axis(2)
-PCProteotypic_all <- sum(table(annotAll$peptideSeq) == 1)/ length(table(annotAll$peptideSeq)) * 100
-
-#plot(sort(table(annotIso$peptideSeq)),axes=F, ylab="Nr protein IDs")
-#axis(2)
-#PCProteotypic_iso <- sum(table(annotIso$peptideSeq) == 1)/ length(table(annotIso$peptideSeq)) * 100
-
-plot(sort(table(annotRev$peptideSeq)),axes=F, ylab="Nr protein IDs")
-axis(2)
-
-PCProteotypic_canonical <- sum(table(annotRev$peptideSeq) == 1)/ length(table(annotRev$peptideSeq)) * 100
-
-## ------------------------------------------------------------------------
-barplot(c(All = PCProteotypic_all, canonical =  PCProteotypic_canonical),las=2, ylab="% proteotypic" )
+barplot(
+    c(All = PCProteotypic_all, Canonical =  PCProteotypic_canonical),
+    las = 2,
+    ylab = "% proteotypic"
+)
 
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 library(Matrix)
-precursors <- unique(subset(specMeta,select = c(peptideModSeq,precursorCharge,peptideSeq )))
+precursors <-
+    unique(subset(specMeta, select = c(
+        peptideModSeq, precursorCharge, peptideSeq
+    )))
 
 
-## ------------------------------------------------------------------------
-
-annotatedPrecursors <-merge(precursors ,
-                            subset(annotAll, select= c(peptideSeq,proteinID)),
-                            by.x="peptideSeq", 
-                            by.y="peptideSeq")
-
-annotatedPrecursors$precursorCharge <- annotatedPrecursors$precursorCharge
-annotatedPrecursors$peptideModSeq <- annotatedPrecursors$peptideModSeq
-head(annotatedPrecursors)
-xx<-prepareMatrix(annotatedPrecursors,proteinID = "proteinID", peptideID = "peptideSeq")
-
+## ----greedyTrembl, fig.cap="Peptide protein machtes for the All database. Rows - peptides, Columns - proteins, black - peptide protein match."----
 library(Matrix)
+annotatedPrecursors <- merge(precursors ,
+                             subset(annotAll, select = c(peptideSeq, proteinID)),
+                             by.x = "peptideSeq",
+                             by.y = "peptideSeq")
+
+
+xx <-
+    prepareMatrix(annotatedPrecursors,
+                  proteinID = "proteinID",
+                  peptideID = "peptideSeq")
+
 image(xx)
 xxAll <- greedy(xx)
 
 
-## ------------------------------------------------------------------------
+## ----greedyCanonical, fig.cap="Peptide protein machtes for the Canonical database. Rows - peptides, Columns - proteins, black - peptide protein match."----
+annotatedPrecursors <-
+    merge(precursors ,
+          subset(annotCan, select = c(peptideSeq, proteinID)),
+          by.x = "peptideSeq",
+          by.y = "peptideSeq")
 
-annotatedPrecursors <-merge(precursors , subset(annotRev, select= c(peptideSeq,proteinID)), by.x="peptideSeq", 
-                            by.y="peptideSeq")
 
-annotatedPrecursors$precursorCharge <- annotatedPrecursors$precursorCharge
-annotatedPrecursors$peptideModSeq <- annotatedPrecursors$peptideModSeq
-
-xx<-prepareMatrix(annotatedPrecursors ,proteinID = "proteinID", peptideID = "peptideSeq")
+xx <-
+    prepareMatrix(annotatedPrecursors ,
+                  proteinID = "proteinID",
+                  peptideID = "peptideSeq")
 image(xx)
 xxCAN <- greedy(xx)
 
-## ----fig.cap="Number of Proteins after protein inference."---------------
-barplot(c(All = length(unique(unlist(xxAll))) , canonical = length(unique(unlist(xxCAN)))    ))
+
+## ----fig.cap="Number of proteins before and after protein inference."---------
+barplot(c(All_before = length(unique(annotAll$proteinID)), All_after = length(unique(unlist(
+    xxAll
+))) , Canonical_before =  length(unique(annotCan$proteinID)), Canonical_after = length(unique(unlist(
+    xxCAN
+)))))
+
+
+## -----------------------------------------------------------------------------
+sessionInfo()
 

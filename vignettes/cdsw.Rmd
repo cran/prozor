@@ -1,0 +1,129 @@
+---
+title: "Computing Dynamic SWATH Windows"
+author: "Witold E. Wolski, Bernd Roschitzki"
+date: "`r Sys.Date()`"
+package: "`r packageVersion('prozor')`"
+vignette: >
+  %\VignetteIndexEntry{Computing Dynamic SWATH Windows}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+output: 
+  html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+# Introduction
+
+Function optimizes Extraction windows for DIA/SWATH so we have the same number of precursor per window. This optimization is based on spectral library data or non redundant .blib files (Bibliospec).
+
+# Prerequisites
+
+```{r echo=FALSE}
+library(prozor)
+
+```
+
+# Constant with method
+
+
+```{r fig.retina=3}
+data("masses")
+cdsw <- Cdsw(masses , nbins = 25, digits = 1)
+cdsw$plot()
+
+```
+
+
+```{r, results='markup'}
+knitr::kable(cdsw$asTable())
+```
+
+
+```{r}
+constError <- cdsw$error()
+```
+
+# Classical Method based on `quantile`
+
+Same number of MS1 precursors in each window
+
+```{r}
+cdsw$quantile_breaks()
+```
+
+```{r fig.retina=3, warning=FALSE}
+cdsw$plot()
+```
+
+```{r, results='markup'}
+knitr::kable(cdsw$asTable())
+```
+
+
+```{r}
+quantileError <- cdsw$error()
+```
+
+# Adjust windows
+
+Using this method the window start and end is shifted to a mass range with as few MS1 peaks as possible.
+
+```{r, }
+knitr::kable(cdsw$optimizeWindows(maxbin = 10, plot = TRUE) )
+```
+
+# Dynamic Swath Windows with Constraints.
+
+
+- Mass range can be specified (*mass\_range*)
+- Maximal window size can be specified (*max\_window\_size*). This is because windows should not be to large because of optimal collision energy (personal communication by Bernd R.).
+- Minimal window size can be specified (*min\_window\_size*).
+- target number of windows can be specified (*nr\_windows*).
+- boundaries between windows are placed in regions were no precursors are observed.
+
+
+```{r fig.retina=3}
+cdsw$sampling_breaks(maxwindow = 100,plot = TRUE)
+```
+
+```{r fig.retina=3}
+cdsw$plot()
+```
+
+```{r, results='markup'}
+knitr::kable(cdsw$asTable())
+```
+
+```{r}
+knitr::kable(cdsw$optimizeWindows(maxbin = 10, plot = TRUE) )
+```
+
+```{r}
+mixedError <- cdsw$error()
+```
+
+
+# Benchmarking of the methods.
+
+We compare the optimal number of MS1 peaks per SWATH window (same in each window) with the numbers obtained by using all of the 3 methods implemented.  
+
+```{r fig.retina=3}
+barplot(c(const = constError$score1, quantile = quantileError$score1, mixed = mixedError$score1),ylab = "Manhattan distance")
+barplot(c(const = constError$score2, quantile = quantileError$score2, mixed = mixedError$score2),ylab = "Euclidean distance")
+
+```
+We can see that Method 3 has a relatively small error although it is able to fulfill constraints such as maximum window size.
+
+# Session info
+
+
+```{r sessionInfo, echo=FALSE}
+sessionInfo()
+```
+
+
+
+
+

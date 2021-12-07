@@ -16,7 +16,7 @@ list of peptide protein assignment
 given matrix (columns protein rows peptides), compute minimal protein set using greedy algorithm
 }
 \examples{
-library(prozor)
+#library(prozor)
 
 data(protpepmetashort)
 colnames(protpepmetashort)
@@ -24,7 +24,7 @@ dim(unique(protpepmetashort[,4]))
 xx = prepareMatrix(protpepmetashort, peptideID = "peptideModSeq")
 dim(xx)
 stopifnot(dim(xx)[1] == dim(unique(protpepmetashort[,4]))[1])
-es = greedy(as.matrix(xx))
+es = greedy(xx)
 stopifnot(length(unique(names(es))) == dim(unique(protpepmetashort[,4]))[1])
 
 }
